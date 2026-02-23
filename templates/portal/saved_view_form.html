@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} | Lab Data Portal{% endblock %}
+
+{% block content %}
+<section class="panel panel-wide">
+    <div class="panel-header">
+        <h2>{{ title }}</h2>
+        <p>Choose columns and quality/status filters for your personal records view.</p>
+    </div>
+
+    <form method="post" class="form-grid">
+        {% csrf_token %}
+
+        <label>
+            <span>{{ form.name.label }}</span>
+            {{ form.name }}
+            {% for error in form.name.errors %}<small class="error-text">{{ error }}</small>{% endfor %}
+        </label>
+
+        <fieldset class="checklist-box">
+            <legend>Visible columns</legend>
+            {{ form.visible_columns }}
+            {% for error in form.visible_columns.errors %}<small class="error-text">{{ error }}</small>{% endfor %}
+        </fieldset>
+
+        <label>
+            <span>{{ form.status_filter.label }}</span>
+            {{ form.status_filter }}
+            {% for error in form.status_filter.errors %}<small class="error-text">{{ error }}</small>{% endfor %}
+        </label>
+
+        <label>
+            <span>{{ form.min_qc_score.label }}</span>
+            {{ form.min_qc_score }}
+            {% for error in form.min_qc_score.errors %}<small class="error-text">{{ error }}</small>{% endfor %}
+        </label>
+
+        <label>
+            <span>{{ form.ordering.label }}</span>
+            {{ form.ordering }}
+            {% for error in form.ordering.errors %}<small class="error-text">{{ error }}</small>{% endfor %}
+        </label>
+
+        <label class="toggle-row">
+            {{ form.is_default }}
+            <span>Make this my default view</span>
+        </label>
+
+        <div class="actions-row">
+            <button type="submit" class="primary-btn">Save preset</button>
+            <a href="{% url 'saved_view_list' %}" class="ghost-btn">Cancel</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

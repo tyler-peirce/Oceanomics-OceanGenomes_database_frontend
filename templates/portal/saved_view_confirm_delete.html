@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Delete Preset | Lab Data Portal{% endblock %}
+
+{% block content %}
+<section class="panel panel-narrow">
+    <div class="panel-header">
+        <h2>Delete preset</h2>
+        <p>This removes the preset <strong>{{ saved_view.name }}</strong>.</p>
+    </div>
+
+    <form method="post" class="actions-row">
+        {% csrf_token %}
+        <button type="submit" class="danger-btn">Delete</button>
+        <a href="{% url 'saved_view_list' %}" class="ghost-btn">Cancel</a>
+    </form>
+</section>
+{% endblock %}

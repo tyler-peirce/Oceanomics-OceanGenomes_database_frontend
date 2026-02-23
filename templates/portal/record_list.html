@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Records | Lab Data Portal{% endblock %}
+
+{% block content %}
+<section class="panel">
+    <div class="panel-header">
+        <h2>Record explorer</h2>
+        <p>Filter by saved view, search across key fields, and update entries with validation.</p>
+    </div>
+
+    <form method="get" class="filters-row">
+        <label>
+            <span>View preset</span>
+            <select name="view" class="form-input" onchange="this.form.submit()">
+                <option value="">Default</option>
+                {% for view in saved_views %}
+                    <option value="{{ view.id }}" {% if selected_view and selected_view.id == view.id %}selected{% endif %}>
+                        {{ view.name }}{% if view.is_default %} (default){% endif %}
+                    </option>
+                {% endfor %}
+            </select>
+        </label>
+        <label>
+            <span>Search</span>
+            <input type="text" name="q" value="{{ query }}" class="form-input" placeholder="Sample, project, submitter, notes">
+        </label>
+        <button type="submit" class="primary-btn">Apply</button>
+        <a href="{% url 'record_list' %}" class="ghost-btn">Clear</a>
+    </form>
+</section>
+
+<section class="panel">
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    {% if "sample_code" in visible_columns %}<th>Sample</th>{% endif %}
+                    {% if "project" in visible_columns %}<th>Project</th>{% endif %}
+                    {% if "submitter" in visible_columns %}<th>Submitter</th>{% endif %}
+                    {% if "status" in visible_columns %}<th>Status</th>{% endif %}
+                    {% if "received_at" in visible_columns %}<th>Received</th>{% endif %}
+                    {% if "processed_at" in visible_columns %}<th>Processed</th>{% endif %}
+                    {% if "qc_score" in visible_columns %}<th>QC</th>{% endif %}
+                    {% if "read_count" in visible_columns %}<th>Reads</th>{% endif %}
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in page_obj %}
+                    <tr>
+                        {% if "sample_code" in visible_columns %}<td>{{ record.sample_code }}</td>{% endif %}
+                        {% if "project" in visible_columns %}<td>{{ record.project }}</td>{% endif %}
+                        {% if "submitter" in visible_columns %}<td>{{ record.submitter }}</td>{% endif %}
+                        {% if "status" in visible_columns %}<td>{{ record.get_status_display }}</td>{% endif %}
+                        {% if "received_at" in visible_columns %}<td>{{ record.received_at }}</td>{% endif %}
+                        {% if "processed_at" in visible_columns %}<td>{{ record.processed_at|default:"-" }}</td>{% endif %}
+                        {% if "qc_score" in visible_columns %}<td>{{ record.qc_score }}</td>{% endif %}
+                        {% if "read_count" in visible_columns %}<td>{{ record.read_count }}</td>{% endif %}
+                        <td><a href="{% url 'record_edit' record.pk %}" class="table-link">Edit</a></td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="9">No records found.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if page_obj.paginator.num_pages > 1 %}
+        <div class="pager">
+            {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_view %}&view={{ selected_view.id }}{% endif %}">Previous</a>
+            {% endif %}
+            <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_view %}&view={{ selected_view.id }}{% endif %}">Next</a>
+            {% endif %}
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

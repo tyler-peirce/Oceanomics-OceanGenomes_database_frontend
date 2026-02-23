@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Dashboard | Lab Data Portal{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<section class="hero panel">
+    <div>
+        <h2>Operations dashboard</h2>
+        <p>Live reporting across submissions, processing status, and quality trends.</p>
+    </div>
+    <div class="hero-pill">
+        <div class="pill-label">Active user</div>
+        <div class="pill-value">{{ user.username }}</div>
+    </div>
+</section>
+
+<section class="stats-grid">
+    <article class="stat-card panel">
+        <h3>Total records</h3>
+        <p>{{ total_records }}</p>
+    </article>
+    <article class="stat-card panel">
+        <h3>Completed</h3>
+        <p>{{ completed_count }}</p>
+    </article>
+    <article class="stat-card panel">
+        <h3>Pending</h3>
+        <p>{{ pending_count }}</p>
+    </article>
+    <article class="stat-card panel">
+        <h3>Failed</h3>
+        <p>{{ failed_count }}</p>
+    </article>
+    <article class="stat-card panel">
+        <h3>Average QC</h3>
+        <p>{% if avg_qc is not None %}{{ avg_qc }}{% else %}N/A{% endif %}</p>
+    </article>
+    <article class="stat-card panel">
+        <h3>Low QC (&lt;70)</h3>
+        <p>{{ low_qc_count }}</p>
+    </article>
+</section>
+
+{% if management_mode %}
+<section class="stats-grid">
+    <article class="stat-card panel accent">
+        <h3>Completion rate</h3>
+        <p>{% if completion_rate is not None %}{{ completion_rate }}%{% else %}N/A{% endif %}</p>
+    </article>
+    <article class="stat-card panel accent">
+        <h3>Overdue &gt;7 days</h3>
+        <p>{{ overdue_count }}</p>
+    </article>
+</section>
+{% endif %}
+
+<section class="two-col">
+    <article class="panel">
+        <h3>Status distribution</h3>
+        <canvas id="statusChart" height="220"></canvas>
+    </article>
+    <article class="panel">
+        <h3>Last 30 days intake</h3>
+        <canvas id="trendChart" height="220"></canvas>
+    </article>
+</section>
+
+<section class="panel">
+    <div class="panel-header row-between">
+        <h3>Most recent records</h3>
+        <a href="{% url 'record_list' %}" class="btn-link">Open full table</a>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Sample</th>
+                    <th>Project</th>
+                    <th>Status</th>
+                    <th>Received</th>
+                    <th>QC</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in recent_records %}
+                    <tr>
+                        <td>{{ record.sample_code }}</td>
+                        <td>{{ record.project }}</td>
+                        <td>{{ record.get_status_display }}</td>
+                        <td>{{ record.received_at }}</td>
+                        <td>{{ record.qc_score }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5">No records yet.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<script id="status-data" type="application/json">{{ status_chart|safe }}</script>
+<script id="trend-data" type="application/json">{{ trend_chart|safe }}</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/dashboard.js' %}"></script>
+{% endblock %}

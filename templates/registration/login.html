@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In | Lab Data Portal{% endblock %}
+
+{% block content %}
+<section class="panel panel-narrow">
+    <div class="panel-header">
+        <h2>Sign in</h2>
+        <p>Use your lab account to access records, dashboards, and saved views.</p>
+    </div>
+
+    {% if form.errors %}
+        <div class="error-box">Incorrect username or password. Please try again.</div>
+    {% endif %}
+
+    <form method="post" class="form-grid">
+        {% csrf_token %}
+        <label>
+            <span>Username</span>
+            {{ form.username }}
+        </label>
+        <label>
+            <span>Password</span>
+            {{ form.password }}
+        </label>
+        <button type="submit" class="primary-btn">Sign in</button>
+    </form>
+</section>
+{% endblock %}

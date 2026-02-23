@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} | Lab Data Portal{% endblock %}
+
+{% block content %}
+<section class="panel panel-wide">
+    <div class="panel-header">
+        <h2>{{ title }}</h2>
+        <p>Validation runs on both the form and database model to keep data quality high.</p>
+    </div>
+
+    <form method="post" class="form-grid">
+        {% csrf_token %}
+        {% for field in form %}
+            <label>
+                <span>{{ field.label }}</span>
+                {{ field }}
+                {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                {% for error in field.errors %}
+                    <small class="error-text">{{ error }}</small>
+                {% endfor %}
+            </label>
+        {% endfor %}
+        {% if form.non_field_errors %}
+            {% for error in form.non_field_errors %}
+                <p class="error-text">{{ error }}</p>
+            {% endfor %}
+        {% endif %}
+
+        <div class="actions-row">
+            <button type="submit" class="primary-btn">Save</button>
+            <a href="{% url 'record_list' %}" class="ghost-btn">Cancel</a>
+        </div>
+    </form>
+</section>
+{% endblock %}
