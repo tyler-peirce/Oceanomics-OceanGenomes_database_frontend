@@ -1,15 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}View Presets | Lab Data Portal{% endblock %}
+{% block title %}Saved Views | Oceanomics Database Explorer{% endblock %}
 
 {% block content %}
 <section class="panel">
-    <div class="panel-header row-between">
-        <div>
-            <h2>Saved view presets</h2>
-            <p>Create personal table layouts and filters for faster workflows.</p>
-        </div>
-        <a href="{% url 'saved_view_create' %}" class="primary-btn">New preset</a>
+    <div class="panel-header">
+        <h2>Lab workflow presets</h2>
+        <p>Shared operational layouts available to every lab user.</p>
     </div>
 
     <div class="table-wrap">
@@ -17,8 +14,53 @@
             <thead>
                 <tr>
                     <th>Name</th>
-                    <th>Status filter</th>
-                    <th>Min QC</th>
+                    <th>Category</th>
+                    <th>Table</th>
+                    <th>Columns</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for preset in lab_presets %}
+                    <tr>
+                        <td>
+                            <strong>{{ preset.name }}</strong>
+                            <div class="muted-text">{{ preset.description }}</div>
+                        </td>
+                        <td>{{ preset.category }}</td>
+                        <td>{{ preset.table_name }}</td>
+                        <td>{{ preset.visible_columns|length }}</td>
+                        <td>
+                            <a href="{% url 'table_detail' preset.table_name %}?preset={{ preset.slug }}" class="table-link">Open</a>
+                            <a href="{% url 'saved_view_create' %}?table={{ preset.table_name }}" class="table-link">Save my copy</a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5">No shared lab presets are available for this schema export.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="panel">
+    <div class="panel-header row-between">
+        <div>
+            <h2>Saved table views</h2>
+            <p>Store preferred columns and sort order per relation.</p>
+        </div>
+        <a href="{% url 'saved_view_create' %}" class="primary-btn">New view</a>
+    </div>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Table</th>
+                    <th>Columns</th>
                     <th>Sort</th>
                     <th>Default</th>
                     <th>Actions</th>
@@ -28,18 +70,62 @@
                 {% for view in views %}
                     <tr>
                         <td>{{ view.name }}</td>
-                        <td>{{ view.get_status_filter_display|default:"All" }}</td>
-                        <td>{{ view.min_qc_score|default:"-" }}</td>
-                        <td>{{ view.get_ordering_display }}</td>
+                        <td>{{ view.table_name }}</td>
+                        <td>{{ view.visible_columns|length }}</td>
+                        <td>{{ view.ordering|default:"Natural order" }}</td>
                         <td>{% if view.is_default %}Yes{% else %}No{% endif %}</td>
                         <td>
+                            <a href="{% url 'table_detail' view.table_name %}?view={{ view.pk }}" class="table-link">Open</a>
                             <a href="{% url 'saved_view_edit' view.pk %}" class="table-link">Edit</a>
                             <a href="{% url 'saved_view_delete' view.pk %}" class="table-link danger">Delete</a>
                         </td>
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="6">No presets yet.</td>
+                        <td colspan="6">No saved views yet.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="panel">
+    <div class="panel-header row-between">
+        <div>
+            <h2>Saved joined views</h2>
+            <p>Build read-only worksheet views over a base table plus parent-table context from foreign keys.</p>
+        </div>
+        <a href="{% url 'joined_view_create' %}" class="primary-btn">New joined view</a>
+    </div>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Base table</th>
+                    <th>Columns</th>
+                    <th>Sort</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for view in joined_views %}
+                    <tr>
+                        <td>{{ view.name }}</td>
+                        <td>{{ view.base_table_name }}</td>
+                        <td>{{ view.visible_columns|length }}</td>
+                        <td>{{ view.ordering|default:"Natural order" }}</td>
+                        <td>
+                            <a href="{% url 'joined_view_detail' view.pk %}" class="table-link">Open</a>
+                            <a href="{% url 'joined_view_edit' view.pk %}" class="table-link">Edit</a>
+                            <a href="{% url 'joined_view_delete' view.pk %}" class="table-link danger">Delete</a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5">No saved joined views yet.</td>
                     </tr>
                 {% endfor %}
             </tbody>

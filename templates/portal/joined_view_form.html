@@ -6,7 +6,14 @@
 <section class="panel panel-wide">
     <div class="panel-header">
         <h2>{{ title }}</h2>
-        <p>Choose a table, the columns to keep visible, and the default sort order.</p>
+        <p>Create a read-only joined worksheet from a base table and parent-table context reached through foreign keys.</p>
+    </div>
+
+    <div class="panel panel-soft">
+        <strong>Builder scope:</strong>
+        <div class="muted-text">
+            This first version only follows foreign keys from the base table outward to parent tables, so each base row stays a single row in the result. Editing still happens on dedicated worksheet pages for the base table.
+        </div>
     </div>
 
     <form method="post" class="form-grid">
@@ -19,10 +26,10 @@
         </label>
 
         <label>
-            <span>{{ form.table_name.label }}</span>
-            {{ form.table_name }}
-            <small>Selecting a different table reloads the column list for that relation.</small>
-            {% for error in form.table_name.errors %}<small class="error-text">{{ error }}</small>{% endfor %}
+            <span>{{ form.base_table_name.label }}</span>
+            {{ form.base_table_name }}
+            <small>Selecting a different base table reloads the reachable related columns.</small>
+            {% for error in form.base_table_name.errors %}<small class="error-text">{{ error }}</small>{% endfor %}
         </label>
 
         <fieldset class="checklist-box">
@@ -37,13 +44,14 @@
             {% for error in form.ordering.errors %}<small class="error-text">{{ error }}</small>{% endfor %}
         </label>
 
-        <label class="toggle-row">
-            {{ form.is_default }}
-            <span>Make this my default view for the selected table</span>
-        </label>
+        {% if form.non_field_errors %}
+            {% for error in form.non_field_errors %}
+                <p class="error-text">{{ error }}</p>
+            {% endfor %}
+        {% endif %}
 
         <div class="actions-row">
-            <button type="submit" class="primary-btn">Save view</button>
+            <button type="submit" class="primary-btn">Save joined view</button>
             <a href="{% url 'saved_view_list' %}" class="ghost-btn">Cancel</a>
         </div>
     </form>

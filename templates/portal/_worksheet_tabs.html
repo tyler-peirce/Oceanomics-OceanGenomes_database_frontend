@@ -1,0 +1,7 @@
+<section class="worksheet-strip">
+    <div class="worksheet-tabs">
+        {% for tab in worksheet_tabs %}
+            <a href="{{ tab.url }}" class="worksheet-tab{% if tab.is_active %} active{% endif %}">{{ tab.label }}</a>
+        {% endfor %}
+    </div>
+</section>

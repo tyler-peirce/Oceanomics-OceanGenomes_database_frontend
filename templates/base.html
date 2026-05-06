@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{% block title %}Lab Data Portal{% endblock %}</title>
+    <title>{% block title %}Oceanomics Database Explorer{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
@@ -15,15 +15,15 @@
     <div class="page-shell">
         <header class="site-header">
             <div class="brand-group">
-                <div class="brand-kicker">Lab Operations</div>
-                <h1 class="brand-title"><a href="{% url 'dashboard' %}">Data Portal</a></h1>
+                <div class="brand-kicker">Oceanomics / Ocean Genomes</div>
+                <h1 class="brand-title"><a href="{% url 'dashboard' %}">Database Explorer</a></h1>
             </div>
             <nav class="site-nav">
                 {% if user.is_authenticated %}
                     <a href="{% url 'dashboard' %}">Dashboard</a>
-                    <a href="{% url 'record_list' %}">Records</a>
-                    <a href="{% url 'saved_view_list' %}">View Presets</a>
-                    <a href="{% url 'record_create' %}" class="btn-link">+ New Record</a>
+                    <a href="{% url 'table_detail' 'summary' %}?preset=programme-summary">Worksheets</a>
+                    <a href="{% url 'table_list' %}">Explorer</a>
+                    <a href="{% url 'saved_view_list' %}">Saved Views</a>
                     {% if user.is_staff %}
                         <a href="{% url 'admin:index' %}">Admin</a>
                     {% endif %}
@@ -38,6 +38,9 @@
         </header>
 
         <main class="content-wrap">
+            {% if worksheet_tabs %}
+                {% include "portal/_worksheet_tabs.html" %}
+            {% endif %}
             {% if messages %}
                 <section class="flash-stack">
                     {% for message in messages %}

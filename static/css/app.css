@@ -101,6 +101,34 @@ a {
     gap: 1rem;
 }
 
+.worksheet-strip {
+    overflow-x: auto;
+    padding-bottom: 0.1rem;
+}
+
+.worksheet-tabs {
+    display: flex;
+    gap: 0.5rem;
+    min-width: max-content;
+}
+
+.worksheet-tab {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.52rem 0.9rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.14);
+    color: #f3f8fc;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    backdrop-filter: blur(3px);
+    font-weight: 600;
+}
+
+.worksheet-tab.active {
+    background: linear-gradient(120deg, rgba(255, 255, 255, 0.96), rgba(247, 243, 234, 0.9));
+    color: var(--text-strong);
+}
+
 .panel {
     background: var(--panel);
     border: 1px solid rgba(8, 32, 50, 0.08);
@@ -116,6 +144,12 @@ a {
 
 .panel-wide {
     max-width: 760px;
+}
+
+.panel-soft {
+    background: rgba(16, 42, 67, 0.05);
+    border: 1px solid rgba(16, 42, 67, 0.08);
+    box-shadow: none;
 }
 
 .hero {
@@ -230,6 +264,69 @@ a {
     align-items: end;
 }
 
+.inline-toolbar {
+    display: none;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.8rem;
+    margin-top: 0.9rem;
+    padding: 0.85rem 0.95rem;
+    border-radius: 0.8rem;
+    border: 1px solid rgba(30, 132, 127, 0.2);
+    background: rgba(30, 132, 127, 0.08);
+}
+
+.inline-toolbar.is-visible {
+    display: flex;
+}
+
+.inline-toolbar.is-saving {
+    opacity: 0.8;
+    pointer-events: none;
+}
+
+.inline-toolbar-summary {
+    display: grid;
+    gap: 0.2rem;
+}
+
+.inline-toolbar-status {
+    color: var(--text-muted);
+    font-size: 0.88rem;
+}
+
+.inline-cell-input {
+    width: 100%;
+    min-width: 120px;
+    border: 1px solid rgba(16, 42, 67, 0.1);
+    border-radius: 0.45rem;
+    padding: 0.35rem 0.45rem;
+    font: inherit;
+    background: rgba(255, 255, 255, 0.92);
+}
+
+.inline-cell-input:focus {
+    outline: 2px solid rgba(30, 132, 127, 0.24);
+    border-color: var(--accent);
+}
+
+.inline-cell-dirty {
+    background: rgba(255, 184, 92, 0.16);
+}
+
+.inline-cell-input-dirty {
+    border-color: #ffb85c;
+    background: #fff9ef;
+}
+
+.table-filters {
+    grid-template-columns: 1fr 1.2fr 1fr auto auto;
+}
+
+.metadata-filters {
+    grid-template-columns: 1.5fr auto auto;
+}
+
 .primary-btn,
 .ghost-btn,
 .danger-btn,
@@ -287,6 +384,22 @@ a {
     align-items: center;
     gap: 0.45rem;
     margin-top: 0.3rem;
+}
+
+.worksheet-form {
+    display: grid;
+    gap: 0.9rem;
+}
+
+.form-columns {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem 0.9rem;
+}
+
+.form-columns label {
+    display: grid;
+    gap: 0.35rem;
 }
 
 .table-wrap {
@@ -367,6 +480,62 @@ th {
     margin: 0;
 }
 
+.stack-list {
+    display: grid;
+    gap: 0.9rem;
+}
+
+.preset-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.85rem;
+}
+
+.preset-card {
+    display: block;
+    border: 1px solid rgba(16, 42, 67, 0.1);
+    border-radius: 0.9rem;
+    padding: 0.95rem;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(247, 243, 234, 0.88));
+    box-shadow: 0 8px 20px rgba(11, 39, 58, 0.08);
+}
+
+.preset-card h4 {
+    margin: 0.15rem 0 0.35rem;
+    font-family: "Fraunces", Georgia, serif;
+    font-size: 1.05rem;
+}
+
+.preset-card p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.preset-kicker {
+    font-size: 0.74rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.preset-banner {
+    margin-top: 0.8rem;
+    padding: 0.75rem 0.85rem;
+    border-radius: 0.8rem;
+    background: rgba(30, 132, 127, 0.12);
+    border: 1px solid rgba(30, 132, 127, 0.24);
+    display: grid;
+    gap: 0.2rem;
+}
+
+.muted-text {
+    margin-top: 0.2rem;
+    color: var(--text-muted);
+    font-size: 0.84rem;
+}
+
 @keyframes rise-in {
     from {
         transform: translateY(8px);
@@ -387,9 +556,21 @@ th {
         grid-template-columns: 1fr;
     }
 
+    .table-filters {
+        grid-template-columns: 1fr;
+    }
+
+    .metadata-filters {
+        grid-template-columns: 1fr;
+    }
+
     .hero {
         flex-direction: column;
         align-items: flex-start;
+    }
+
+    .form-columns {
+        grid-template-columns: 1fr;
     }
 }
 

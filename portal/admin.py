@@ -1,25 +1,17 @@
 from django.contrib import admin
 
-from .models import LabRecord, SavedView
+from .models import SavedJoinedView, SavedTableView
 
 
-@admin.register(LabRecord)
-class LabRecordAdmin(admin.ModelAdmin):
-    list_display = (
-        "sample_code",
-        "project",
-        "submitter",
-        "status",
-        "qc_score",
-        "received_at",
-        "processed_at",
-    )
-    list_filter = ("status", "project", "received_at")
-    search_fields = ("sample_code", "project", "submitter", "notes")
+@admin.register(SavedTableView)
+class SavedTableViewAdmin(admin.ModelAdmin):
+    list_display = ("name", "table_name", "user", "is_default", "ordering")
+    list_filter = ("table_name", "is_default")
+    search_fields = ("name", "table_name", "user__username")
 
 
-@admin.register(SavedView)
-class SavedViewAdmin(admin.ModelAdmin):
-    list_display = ("name", "user", "is_default", "status_filter", "min_qc_score", "ordering")
-    list_filter = ("is_default", "status_filter")
-    search_fields = ("name", "user__username")
+@admin.register(SavedJoinedView)
+class SavedJoinedViewAdmin(admin.ModelAdmin):
+    list_display = ("name", "base_table_name", "user", "ordering")
+    list_filter = ("base_table_name",)
+    search_fields = ("name", "base_table_name", "user__username")

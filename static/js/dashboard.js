@@ -11,13 +11,13 @@ function parseChartData(id) {
     }
 }
 
-function drawStatusChart() {
-    const ctx = document.getElementById("statusChart");
+function drawKindChart() {
+    const ctx = document.getElementById("kindChart");
     if (!ctx) {
         return;
     }
 
-    const data = parseChartData("status-data");
+    const data = parseChartData("relation-kind-data");
     new Chart(ctx, {
         type: "doughnut",
         data: {
@@ -25,7 +25,7 @@ function drawStatusChart() {
             datasets: [
                 {
                     data: data.values,
-                    backgroundColor: ["#1e847f", "#ffb85c", "#2b3f54", "#b84a28"],
+                    backgroundColor: ["#1e847f", "#ffb85c"],
                     borderWidth: 0,
                 },
             ],
@@ -41,25 +41,23 @@ function drawStatusChart() {
     });
 }
 
-function drawTrendChart() {
-    const ctx = document.getElementById("trendChart");
+function drawWidthChart() {
+    const ctx = document.getElementById("widthChart");
     if (!ctx) {
         return;
     }
 
-    const data = parseChartData("trend-data");
+    const data = parseChartData("width-data");
     new Chart(ctx, {
-        type: "line",
+        type: "bar",
         data: {
             labels: data.labels,
             datasets: [
                 {
-                    label: "Records received",
                     data: data.values,
-                    borderColor: "#16697a",
-                    backgroundColor: "rgba(30, 132, 127, 0.2)",
-                    tension: 0.32,
-                    fill: true,
+                    borderWidth: 0,
+                    backgroundColor: "#16697a",
+                    borderRadius: 8,
                 },
             ],
         },
@@ -82,5 +80,5 @@ function drawTrendChart() {
     });
 }
 
-drawStatusChart();
-drawTrendChart();
+drawKindChart();
+drawWidthChart();

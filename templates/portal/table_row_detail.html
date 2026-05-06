@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}{{ table.name }} Row | Oceanomics Database Explorer{% endblock %}
+
+{% block content %}
+<section class="panel">
+    <div class="panel-header row-between">
+        <div>
+            <h2>{{ table.name }} row detail</h2>
+            <p>Full row view resolved from the exported primary key definition.</p>
+        </div>
+        <a href="{{ return_url }}" class="ghost-btn">Back to table</a>
+    </div>
+
+    {% if data_error %}
+        <div class="error-box">{{ data_error }}</div>
+    {% elif row %}
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Column</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for column_name, value in row_items %}
+                        <tr>
+                            <td>{{ column_name }}</td>
+                            <td>{{ value|default:"-" }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

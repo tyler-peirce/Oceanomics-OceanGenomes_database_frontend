@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Dashboard | Lab Data Portal{% endblock %}
+{% block title %}Dashboard | Oceanomics Database Explorer{% endblock %}
 
 {% block extra_head %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -10,103 +10,149 @@
 {% block content %}
 <section class="hero panel">
     <div>
-        <h2>Operations dashboard</h2>
-        <p>Live reporting across submissions, processing status, and quality trends.</p>
+        <h2>Schema dashboard</h2>
+        <p>Metadata and live table coverage for the current Oceanomics database export.</p>
     </div>
     <div class="hero-pill">
-        <div class="pill-label">Active user</div>
+        <div class="pill-label">Signed in as</div>
         <div class="pill-value">{{ user.username }}</div>
     </div>
 </section>
 
-<section class="stats-grid">
-    <article class="stat-card panel">
-        <h3>Total records</h3>
-        <p>{{ total_records }}</p>
-    </article>
-    <article class="stat-card panel">
-        <h3>Completed</h3>
-        <p>{{ completed_count }}</p>
-    </article>
-    <article class="stat-card panel">
-        <h3>Pending</h3>
-        <p>{{ pending_count }}</p>
-    </article>
-    <article class="stat-card panel">
-        <h3>Failed</h3>
-        <p>{{ failed_count }}</p>
-    </article>
-    <article class="stat-card panel">
-        <h3>Average QC</h3>
-        <p>{% if avg_qc is not None %}{{ avg_qc }}{% else %}N/A{% endif %}</p>
-    </article>
-    <article class="stat-card panel">
-        <h3>Low QC (&lt;70)</h3>
-        <p>{{ low_qc_count }}</p>
-    </article>
-</section>
+{% if schema_error %}
+    <section class="panel">
+        <div class="error-box">{{ schema_error }}</div>
+    </section>
+{% else %}
+    <section class="stats-grid">
+        <article class="stat-card panel">
+            <h3>Relations</h3>
+            <p>{{ total_relations }}</p>
+        </article>
+        <article class="stat-card panel">
+            <h3>Base tables</h3>
+            <p>{{ base_table_count }}</p>
+        </article>
+        <article class="stat-card panel">
+            <h3>Views</h3>
+            <p>{{ view_count }}</p>
+        </article>
+        <article class="stat-card panel">
+            <h3>Total columns</h3>
+            <p>{{ total_columns }}</p>
+        </article>
+        <article class="stat-card panel">
+            <h3>Primary keys</h3>
+            <p>{{ relations_with_primary_keys }}</p>
+        </article>
+        <article class="stat-card panel">
+            <h3>Foreign keys</h3>
+            <p>{{ relations_with_foreign_keys }}</p>
+        </article>
+    </section>
 
-{% if management_mode %}
-<section class="stats-grid">
-    <article class="stat-card panel accent">
-        <h3>Completion rate</h3>
-        <p>{% if completion_rate is not None %}{{ completion_rate }}%{% else %}N/A{% endif %}</p>
-    </article>
-    <article class="stat-card panel accent">
-        <h3>Overdue &gt;7 days</h3>
-        <p>{{ overdue_count }}</p>
-    </article>
-</section>
+    <section class="two-col">
+        <article class="panel">
+            <h3>Table vs view split</h3>
+            <canvas id="kindChart" height="220"></canvas>
+        </article>
+        <article class="panel">
+            <h3>Widest relations</h3>
+            <canvas id="widthChart" height="220"></canvas>
+        </article>
+    </section>
+
+    <section class="panel">
+        <div class="panel-header row-between">
+            <div>
+                <h3>Focus tables</h3>
+                <p>Key Oceanomics relations with optional live row counts from the connected database.</p>
+            </div>
+            <a href="{% url 'table_list' %}" class="btn-link">Browse catalog</a>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Relation</th>
+                        <th>Kind</th>
+                        <th>Columns</th>
+                        <th>Primary key</th>
+                        <th>Live rows</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in focus_tables %}
+                        <tr>
+                            <td><a href="{% url 'table_detail' entry.table.name %}" class="table-link">{{ entry.table.name }}</a></td>
+                            <td>{{ entry.table.relation_kind|title }}</td>
+                            <td>{{ entry.table.column_count }}</td>
+                            <td>{{ entry.table.short_primary_key }}</td>
+                            <td>{% if entry.row_count is not None %}{{ entry.row_count }}{% else %}Unavailable{% endif %}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5">No matching focus tables were found in the schema export.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="panel">
+        <div class="panel-header">
+            <h3>Lab workflow presets</h3>
+            <p>Shared LIMS-style entry points for the main operational workflows.</p>
+        </div>
+        <div class="preset-grid">
+            {% for item in workflow_presets %}
+                <a href="{% url 'table_detail' item.table.name %}?preset={{ item.preset.slug }}" class="preset-card">
+                    <div class="preset-kicker">{{ item.preset.category }}</div>
+                    <h4>{{ item.preset.name }}</h4>
+                    <p>{{ item.preset.description }}</p>
+                    <div class="muted-text">{{ item.table.name }} · {{ item.preset.visible_columns|length }} columns</div>
+                </a>
+            {% empty %}
+                <div class="muted-text">No shared workflow presets matched the current schema export.</div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="panel">
+        <div class="panel-header">
+            <h3>Relation overview</h3>
+            <p>Quick scan of the first relations in the current export.</p>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Kind</th>
+                        <th>Columns</th>
+                        <th>Primary key</th>
+                        <th>Foreign keys</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for relation in recent_relations %}
+                        <tr>
+                            <td><a href="{% url 'table_detail' relation.name %}" class="table-link">{{ relation.name }}</a></td>
+                            <td>{{ relation.relation_kind|title }}</td>
+                            <td>{{ relation.column_count }}</td>
+                            <td>{{ relation.short_primary_key }}</td>
+                            <td>{{ relation.foreign_keys|length }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <script id="relation-kind-data" type="application/json">{{ relation_kind_chart|safe }}</script>
+    <script id="width-data" type="application/json">{{ width_chart|safe }}</script>
 {% endif %}
-
-<section class="two-col">
-    <article class="panel">
-        <h3>Status distribution</h3>
-        <canvas id="statusChart" height="220"></canvas>
-    </article>
-    <article class="panel">
-        <h3>Last 30 days intake</h3>
-        <canvas id="trendChart" height="220"></canvas>
-    </article>
-</section>
-
-<section class="panel">
-    <div class="panel-header row-between">
-        <h3>Most recent records</h3>
-        <a href="{% url 'record_list' %}" class="btn-link">Open full table</a>
-    </div>
-    <div class="table-wrap">
-        <table>
-            <thead>
-                <tr>
-                    <th>Sample</th>
-                    <th>Project</th>
-                    <th>Status</th>
-                    <th>Received</th>
-                    <th>QC</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for record in recent_records %}
-                    <tr>
-                        <td>{{ record.sample_code }}</td>
-                        <td>{{ record.project }}</td>
-                        <td>{{ record.get_status_display }}</td>
-                        <td>{{ record.received_at }}</td>
-                        <td>{{ record.qc_score }}</td>
-                    </tr>
-                {% empty %}
-                    <tr>
-                        <td colspan="5">No records yet.</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</section>
-
-<script id="status-data" type="application/json">{{ status_chart|safe }}</script>
-<script id="trend-data" type="application/json">{{ trend_chart|safe }}</script>
 {% endblock %}
 
 {% block extra_js %}

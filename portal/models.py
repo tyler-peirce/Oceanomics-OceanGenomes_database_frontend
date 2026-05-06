@@ -5,6 +5,9 @@ from django.db import models, transaction
 from django.db.models import F, Q
 from django.utils import timezone
 
+from .joined_views import available_joined_column_references
+from .schema import SchemaMetadataError, available_table_names, get_table_metadata
+
 
 class LabRecord(models.Model):
     class Status(models.TextChoices):
@@ -167,3 +170,142 @@ class SavedView(models.Model):
             queryset = queryset.filter(qc_score__gte=self.min_qc_score)
 
         return queryset.order_by(self.ordering)
+
+
+class SavedTableView(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="saved_table_views")
+    name = models.CharField(max_length=100)
+    table_name = models.CharField(max_length=128)
+    visible_columns = models.JSONField(default=list)
+    ordering = models.CharField(max_length=128, blank=True)
+    is_default = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["table_name", "-is_default", "name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "table_name", "name"],
+                name="unique_saved_table_view_name_per_user",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.table_name}: {self.name} ({self.user.username})"
+
+    def clean(self) -> None:
+        errors = {}
+        try:
+            known_tables = set(available_table_names())
+        except SchemaMetadataError as exc:
+            raise ValidationError({"table_name": str(exc)}) from exc
+        if self.table_name not in known_tables:
+            errors["table_name"] = "Choose a table from the exported schema metadata."
+
+        chosen_columns = list(self.visible_columns or [])
+        if not chosen_columns:
+            errors["visible_columns"] = "Select at least one visible column."
+
+        if self.table_name in known_tables:
+            try:
+                table = get_table_metadata(self.table_name)
+            except SchemaMetadataError as exc:
+                errors["table_name"] = str(exc)
+            else:
+                valid_columns = set(table.ordered_column_names)
+                invalid_columns = sorted(set(chosen_columns) - valid_columns)
+                if invalid_columns:
+                    errors["visible_columns"] = (
+                        "Unsupported columns for this table: " + ", ".join(invalid_columns)
+                    )
+
+                if self.ordering:
+                    ordering_column = self.ordering[1:] if self.ordering.startswith("-") else self.ordering
+                    if ordering_column not in valid_columns:
+                        errors["ordering"] = "Choose a sort column from this table."
+
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+
+        with transaction.atomic():
+            if self.is_default:
+                SavedTableView.objects.filter(
+                    user=self.user,
+                    table_name=self.table_name,
+                    is_default=True,
+                ).exclude(pk=self.pk).update(is_default=False)
+
+            if (
+                not self.is_default
+                and not SavedTableView.objects.filter(
+                    user=self.user,
+                    table_name=self.table_name,
+                ).exclude(pk=self.pk).exists()
+            ):
+                self.is_default = True
+
+            return super().save(*args, **kwargs)
+
+
+class SavedJoinedView(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="saved_joined_views")
+    name = models.CharField(max_length=100)
+    base_table_name = models.CharField(max_length=128)
+    visible_columns = models.JSONField(default=list)
+    ordering = models.CharField(max_length=128, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["base_table_name", "name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "base_table_name", "name"],
+                name="unique_saved_joined_view_name_per_user",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.base_table_name}: {self.name} ({self.user.username})"
+
+    def clean(self) -> None:
+        errors = {}
+        try:
+            known_tables = set(available_table_names())
+        except SchemaMetadataError as exc:
+            raise ValidationError({"base_table_name": str(exc)}) from exc
+
+        if self.base_table_name not in known_tables:
+            errors["base_table_name"] = "Choose a base table from the exported schema metadata."
+
+        chosen_columns = list(self.visible_columns or [])
+        if not chosen_columns:
+            errors["visible_columns"] = "Select at least one visible column."
+
+        if self.base_table_name in known_tables:
+            try:
+                valid_columns = available_joined_column_references(self.base_table_name)
+            except SchemaMetadataError as exc:
+                errors["base_table_name"] = str(exc)
+            else:
+                invalid_columns = sorted(set(chosen_columns) - valid_columns)
+                if invalid_columns:
+                    errors["visible_columns"] = (
+                        "Unsupported joined-view columns for this base table: " + ", ".join(invalid_columns)
+                    )
+
+                if self.ordering:
+                    ordering_column = self.ordering[1:] if self.ordering.startswith("-") else self.ordering
+                    if ordering_column not in valid_columns:
+                        errors["ordering"] = "Choose a sort column from the selected base table graph."
+
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)

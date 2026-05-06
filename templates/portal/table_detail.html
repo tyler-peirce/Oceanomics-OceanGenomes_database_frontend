@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+
+{% block title %}{{ table.name }} | Oceanomics Database Explorer{% endblock %}
+
+{% block content %}
+<section class="hero panel">
+    <div>
+        <h2>{{ table.name }}</h2>
+        <p>{{ table.relation_kind|title }} in schema <strong>{{ table.schema }}</strong> with {{ table.column_count }} columns.</p>
+    </div>
+    <div class="actions-row">
+        <a href="{% url 'saved_view_create' %}?table={{ table.name }}" class="primary-btn">Save layout</a>
+        <a href="{% url 'table_list' %}" class="ghost-btn">Back to catalog</a>
+    </div>
+</section>
+
+<section class="stats-grid">
+    <article class="stat-card panel">
+        <h3>Kind</h3>
+        <p>{{ table.relation_kind|title }}</p>
+    </article>
+    <article class="stat-card panel">
+        <h3>Columns</h3>
+        <p>{{ table.column_count }}</p>
+    </article>
+    <article class="stat-card panel">
+        <h3>Primary key</h3>
+        <p>{{ table.primary_key_columns|length }}</p>
+    </article>
+    <article class="stat-card panel">
+        <h3>Foreign keys</h3>
+        <p>{{ table.foreign_keys|length }}</p>
+    </article>
+</section>
+
+<section class="panel">
+    <div class="panel-header">
+        <h3>Live data explorer</h3>
+        <p>Lab presets provide shared workflow layouts. Saved views stay personal to each user.</p>
+    </div>
+
+    <form method="get" class="filters-row table-filters">
+        <label>
+            <span>Lab preset</span>
+            <select name="preset" class="form-input" onchange="this.form.submit()">
+                <option value="">None</option>
+                {% for preset in table_presets %}
+                    <option value="{{ preset.slug }}" {% if selected_preset and selected_preset.slug == preset.slug %}selected{% endif %}>
+                        {{ preset.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </label>
+        <label>
+            <span>Saved view</span>
+            <select name="view" class="form-input" onchange="this.form.submit()">
+                <option value="">Default layout</option>
+                {% for view in saved_views %}
+                    <option value="{{ view.id }}" {% if selected_view and selected_view.id == view.id %}selected{% endif %}>
+                        {{ view.name }}{% if view.is_default %} (default){% endif %}
+                    </option>
+                {% endfor %}
+            </select>
+        </label>
+        <label>
+            <span>Search</span>
+            <input type="text" name="q" value="{{ query }}" class="form-input" placeholder="Matches primary key and text columns">
+        </label>
+        <label>
+            <span>Sort</span>
+            <select name="ordering" class="form-input">
+                {% for value, label in ordering_options %}
+                    <option value="{{ value }}" {% if ordering == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <button type="submit" class="primary-btn">Apply</button>
+        <a href="{% url 'table_detail' table.name %}" class="ghost-btn">Reset</a>
+    </form>
+
+    {% if selected_preset %}
+        <div class="preset-banner">
+            <strong>{{ selected_preset.name }}</strong>
+            <span>{{ selected_preset.description }}</span>
+        </div>
+    {% endif %}
+
+    {% if data_error %}
+        <div class="error-box">{{ data_error }}</div>
+    {% endif %}
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    {% for column_name in visible_columns %}
+                        <th>{{ column_name }}</th>
+                    {% endfor %}
+                    {% if table.primary_key_columns %}
+                        <th>Actions</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                    <tr>
+                        {% for value in row.cells %}
+                            <td>{{ value|default:"-" }}</td>
+                        {% endfor %}
+                        {% if table.primary_key_columns %}
+                            <td>
+                                {% if row.detail_url %}
+                                    <a href="{{ row.detail_url }}" class="table-link">Inspect</a>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        {% endif %}
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="{{ visible_columns|length|add:action_column_count }}">No rows were returned.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if page_obj.paginator.num_pages > 1 %}
+        <div class="pager">
+            {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}{% if pagination_query %}&{{ pagination_query }}{% endif %}">Previous</a>
+            {% endif %}
+            <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% if pagination_query %}&{{ pagination_query }}{% endif %}">Next</a>
+            {% endif %}
+        </div>
+    {% endif %}
+</section>
+
+<section class="two-col">
+    <article class="panel">
+        <div class="panel-header">
+            <h3>Columns</h3>
+            <p>Type and key summary from the exported schema.</p>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Flags</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for column in table.columns %}
+                        <tr>
+                            <td>{{ column.column_name }}</td>
+                            <td>{{ column.data_type }}</td>
+                            <td>
+                                {% if column.is_primary_key %}PK{% endif %}
+                                {% if column.is_in_unique_constraint %}{% if column.is_primary_key %}, {% endif %}Unique{% endif %}
+                                {% if not column.is_nullable %}{% if column.is_primary_key or column.is_in_unique_constraint %}, {% endif %}Required{% endif %}
+                                {% if column.is_nullable and not column.is_primary_key and not column.is_in_unique_constraint %}-{% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </article>
+
+    <article class="panel">
+        <div class="panel-header">
+            <h3>Relationships</h3>
+            <p>Foreign key targets and unique constraints captured in the export.</p>
+        </div>
+        <div class="stack-list">
+            <div>
+                <strong>Primary key:</strong>
+                {{ table.short_primary_key }}
+            </div>
+            <div>
+                <strong>Unique constraints:</strong>
+                {% if table.unique_constraints %}
+                    {% for constraint in table.unique_constraints %}
+                        <div class="muted-text">{{ constraint.constraint_name }}: {{ constraint.columns|join:", " }}</div>
+                    {% endfor %}
+                {% else %}
+                    <div class="muted-text">None in export.</div>
+                {% endif %}
+            </div>
+            <div>
+                <strong>Foreign keys:</strong>
+                {% if table.foreign_keys %}
+                    {% for fk in table.foreign_keys %}
+                        <div class="muted-text">
+                            {{ fk.constraint_name }}: {{ fk.columns|join:", " }} -> {{ fk.reference_table }} ({{ fk.reference_columns|join:", " }})
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="muted-text">None in export.</div>
+                {% endif %}
+            </div>
+        </div>
+    </article>
+</section>
+{% endblock %}

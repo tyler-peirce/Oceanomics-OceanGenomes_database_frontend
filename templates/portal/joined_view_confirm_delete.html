@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Delete Joined View | Oceanomics Database Explorer{% endblock %}
+
+{% block content %}
+<section class="panel panel-wide">
+    <div class="panel-header">
+        <h2>Delete joined view</h2>
+        <p>This will remove <strong>{{ saved_view.name }}</strong> from your saved joined views.</p>
+    </div>
+
+    <form method="post" class="actions-row">
+        {% csrf_token %}
+        <button type="submit" class="primary-btn">Delete</button>
+        <a href="{% url 'saved_view_list' %}" class="ghost-btn">Cancel</a>
+    </form>
+</section>
+{% endblock %}

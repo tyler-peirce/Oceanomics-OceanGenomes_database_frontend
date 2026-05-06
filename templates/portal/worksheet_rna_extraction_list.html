@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}3.RNAExtractions | Oceanomics Database Explorer{% endblock %}
+
+{% block content %}
+<section class="hero panel">
+    <div>
+        <h2>3.RNAExtractions</h2>
+        <p>Editable RNA extraction worksheet over the <strong>rna_extraction</strong> table with specimen and tissue context.</p>
+    </div>
+    <div class="actions-row">
+        <a href="{% url 'worksheet_rna_extraction_create' %}" class="primary-btn">Add RNA extraction</a>
+        <a href="{% url 'table_detail' 'rna_extraction' %}?preset=rna-extraction-queue" class="ghost-btn">Open explorer view</a>
+    </div>
+</section>
+
+<section class="panel">
+    <div class="panel-header">
+        <h3>Workbook mapping</h3>
+        <p>This page follows the current `3.RNAExtractions` worksheet. Tissue and specimen context is shown read-only from linked tables.</p>
+    </div>
+    <div class="muted-text">
+        Not yet mapped from the workbook: {{ unmapped_fields|join:", " }}
+    </div>
+
+    <form method="get" class="filters-row metadata-filters">
+        <label>
+            <span>Search RNA extractions</span>
+            <input type="text" name="q" value="{{ query }}" class="form-input" placeholder="Tube ID, specimen, sample ID, species, status">
+        </label>
+        <button type="submit" class="primary-btn">Apply</button>
+        <a href="{% url 'worksheet_rna_extractions' %}" class="ghost-btn">Clear</a>
+    </form>
+</section>
+
+<section class="panel">
+    {% if data_error %}
+        <div class="error-box">{{ data_error }}</div>
+    {% endif %}
+
+    <div data-inline-editor-root data-save-url="{% url 'worksheet_rna_extractions_bulk_update' %}">
+        <div class="inline-toolbar" data-inline-toolbar>
+            <div class="inline-toolbar-summary">
+                <strong><span data-change-count>0</span> row(s) with unsaved changes</strong>
+                <span class="inline-toolbar-status" data-inline-status></span>
+            </div>
+            <div class="actions-row">
+                <button type="button" class="primary-btn" data-inline-save>Save changes</button>
+                <button type="button" class="ghost-btn" data-inline-reset>Discard</button>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table>
+            <thead>
+                <tr>
+                    {% for column in display_columns %}
+                        <th>{{ column.label }}</th>
+                    {% endfor %}
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                    <tr data-row-id="{{ row.rna_id }}">
+                        {% for cell in row.cells %}
+                            <td>
+                                {% if cell.editable %}
+                                    <input
+                                        type="{% if cell.editor_type == 'date' %}date{% elif cell.editor_type == 'integer' or cell.editor_type == 'float' %}number{% else %}text{% endif %}"
+                                        {% if cell.editor_type == 'float' %}step="any"{% elif cell.editor_type == 'integer' %}step="1"{% endif %}
+                                        value="{% if cell.editor_type == 'date' %}{{ cell.value|date:'Y-m-d' }}{% else %}{{ cell.value|default_if_none:'' }}{% endif %}"
+                                        data-inline-field="{{ cell.field_name }}"
+                                        data-original-value="{% if cell.editor_type == 'date' %}{{ cell.value|date:'Y-m-d' }}{% else %}{{ cell.value|default_if_none:'' }}{% endif %}"
+                                        class="inline-cell-input"
+                                    >
+                                {% else %}
+                                    {{ cell.value|default:"-" }}
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                        <td>
+                            <a href="{% url 'worksheet_rna_extraction_edit' row.rna_id %}" class="table-link">Edit</a>
+                            <a href="{% url 'table_row_detail' 'rna_extraction' %}?rna_id={{ row.rna_id }}" class="table-link">Inspect</a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="{{ display_columns|length|add:1 }}">No RNA extraction rows matched the current search.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if page_obj.paginator.num_pages > 1 %}
+        <div class="pager">
+            {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}{% if pagination_query %}&{{ pagination_query }}{% endif %}">Previous</a>
+            {% endif %}
+            <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% if pagination_query %}&{{ pagination_query }}{% endif %}">Next</a>
+            {% endif %}
+        </div>
+    {% endif %}
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/worksheet_inline_editor.js' %}"></script>
+{% endblock %}

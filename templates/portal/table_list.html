@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Tables | Oceanomics Database Explorer{% endblock %}
+
+{% block content %}
+<section class="panel">
+    <div class="panel-header">
+        <h2>Data catalog</h2>
+        <p>Browse the exported schema and open live table data where the connected database exposes the relation.</p>
+    </div>
+
+    <form method="get" class="filters-row">
+        <label>
+            <span>Search relations</span>
+            <input type="text" name="q" value="{{ query }}" class="form-input" placeholder="Table or column name">
+        </label>
+        <button type="submit" class="primary-btn">Apply</button>
+        <a href="{% url 'table_list' %}" class="ghost-btn">Clear</a>
+    </form>
+</section>
+
+<section class="panel">
+    {% if schema_error %}
+        <div class="error-box">{{ schema_error }}</div>
+    {% endif %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Relation</th>
+                    <th>Kind</th>
+                    <th>Columns</th>
+                    <th>Primary key</th>
+                    <th>Foreign keys</th>
+                    <th>Lab presets</th>
+                    <th>Default view</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in table_entries %}
+                    <tr>
+                        <td>
+                            <strong>{{ entry.table.name }}</strong>
+                            <div class="muted-text">{{ entry.preview_columns }}</div>
+                        </td>
+                        <td>{{ entry.table.relation_kind|title }}</td>
+                        <td>{{ entry.table.column_count }}</td>
+                        <td>{{ entry.table.short_primary_key }}</td>
+                        <td>{{ entry.table.foreign_keys|length }}</td>
+                        <td>
+                            {% if entry.lab_presets %}
+                                {% for preset in entry.lab_presets %}
+                                    <div class="muted-text">{{ preset.name }}</div>
+                                {% endfor %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if entry.default_view %}
+                                {{ entry.default_view.name }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="actions-row">
+                            <a href="{% url 'table_detail' entry.table.name %}" class="table-link">Browse</a>
+                            {% if entry.lab_presets %}
+                                <a href="{% url 'table_detail' entry.table.name %}?preset={{ entry.lab_presets.0.slug }}" class="table-link">Open preset</a>
+                            {% endif %}
+                            {% if entry.default_view %}
+                                <a href="{% url 'table_detail' entry.table.name %}?view={{ entry.default_view.pk }}" class="table-link">Open default</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="8">No relations matched the current search.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

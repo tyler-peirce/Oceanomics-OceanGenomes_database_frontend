@@ -51,25 +51,37 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "lab_portal.wsgi.application"
 
-postgres_db = os.getenv("POSTGRES_DB")
-if postgres_db:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": postgres_db,
-            "USER": os.getenv("POSTGRES_USER", "postgres"),
-            "PASSWORD": os.getenv("POSTGRES_PASSWORD", "postgres"),
-            "HOST": os.getenv("POSTGRES_HOST", "localhost"),
-            "PORT": os.getenv("POSTGRES_PORT", "5432"),
-        }
+def postgres_database_config(prefix: str):
+    database_name = os.getenv(f"{prefix}_DB")
+    if not database_name:
+        return None
+
+    return {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": database_name,
+        "USER": os.getenv(f"{prefix}_USER", "postgres"),
+        "PASSWORD": os.getenv(f"{prefix}_PASSWORD", "postgres"),
+        "HOST": os.getenv(f"{prefix}_HOST", "localhost"),
+        "PORT": os.getenv(f"{prefix}_PORT", "5432"),
     }
-else:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
-        }
+
+default_database = postgres_database_config("APP_POSTGRES")
+if default_database is None:
+    default_database = {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
     }
+
+DATABASES = {"default": default_database}
+
+oceanomics_database = postgres_database_config("OCEANOMICS_POSTGRES")
+if oceanomics_database is None:
+    oceanomics_database = postgres_database_config("POSTGRES")
+
+if oceanomics_database is not None:
+    DATABASES["oceanomics"] = oceanomics_database
+
+DATA_EXPLORER_DATABASE_ALIAS = "oceanomics" if "oceanomics" in DATABASES else "default"
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -100,6 +112,8 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "dashboard"
 LOGOUT_REDIRECT_URL = "login"
+
+SCHEMA_METADATA_PATH = os.getenv("SCHEMA_METADATA_PATH", "")
 
 csrf_origins = os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "")
 CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in csrf_origins.split(",") if origin.strip()]

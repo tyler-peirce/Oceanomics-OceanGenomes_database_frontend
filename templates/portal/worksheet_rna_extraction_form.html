@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} | Oceanomics Database Explorer{% endblock %}
+
+{% block content %}
+<section class="hero panel">
+    <div>
+        <h2>{{ title }}</h2>
+        <p>Base-table editing for the current `3.RNAExtractions` worksheet. Related specimen and tissue fields stay read-only.</p>
+    </div>
+    <div class="hero-pill">
+        <div class="pill-label">Identity</div>
+        <div class="pill-value">{{ identity_note }}</div>
+    </div>
+</section>
+
+{% if linked_context %}
+    <section class="panel panel-soft">
+        <strong>Linked context</strong>
+        <div class="muted-text">
+            Tissue: {{ linked_context.tissue.tissue_id|default:"-" }}
+            {% if linked_context.tissue.tissue %} | Tissue type: {{ linked_context.tissue.tissue }}{% endif %}
+            {% if linked_context.sample %}
+                | Specimen: {{ linked_context.og_id }}
+                | Species: {{ linked_context.sample.nominal_species_id|default:"-" }}
+                | Common name: {{ linked_context.sample.common_name|default:"-" }}
+            {% else %}
+                | Specimen: {{ linked_context.og_id }}
+            {% endif %}
+        </div>
+    </section>
+{% endif %}
+
+<section class="panel panel-wide">
+    <form method="post" class="worksheet-form">
+        {% csrf_token %}
+        {% for group in form.fieldsets %}
+            <fieldset class="checklist-box">
+                <legend>{{ group.legend }}</legend>
+                <div class="form-columns">
+                    {% for field in group.fields %}
+                        <label>
+                            <span>{{ field.label }}</span>
+                            {{ field }}
+                            {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                            {% for error in field.errors %}
+                                <small class="error-text">{{ error }}</small>
+                            {% endfor %}
+                        </label>
+                    {% endfor %}
+                </div>
+            </fieldset>
+        {% endfor %}
+
+        {% if form.non_field_errors %}
+            {% for error in form.non_field_errors %}
+                <p class="error-text">{{ error }}</p>
+            {% endfor %}
+        {% endif %}
+
+        <div class="panel panel-soft">
+            <strong>Workbook columns not yet mapped in the app:</strong>
+            <div class="muted-text">{{ unmapped_fields|join:", " }}</div>
+        </div>
+
+        <div class="actions-row">
+            <button type="submit" class="primary-btn">{% if mode == "create" %}Create RNA extraction{% else %}Save changes{% endif %}</button>
+            <a href="{% url 'worksheet_rna_extractions' %}" class="ghost-btn">Cancel</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

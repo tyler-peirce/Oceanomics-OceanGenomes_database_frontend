@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}{{ saved_view.name }} | Oceanomics Database Explorer{% endblock %}
+
+{% block content %}
+<section class="hero panel">
+    <div>
+        <h2>{{ saved_view.name }}</h2>
+        <p>Base table: <strong>{{ base_table.name }}</strong>. Read-only joined worksheet built from schema-export foreign keys.</p>
+    </div>
+    <div class="actions-row">
+        <a href="{% url 'joined_view_edit' saved_view.pk %}" class="primary-btn">Edit definition</a>
+        <a href="{% url 'table_detail' base_table.name %}" class="ghost-btn">Open base explorer</a>
+    </div>
+</section>
+
+<section class="panel">
+    <form method="get" class="filters-row metadata-filters">
+        <label>
+            <span>Search joined view</span>
+            <input type="text" name="q" value="{{ query }}" class="form-input" placeholder="Search across visible columns">
+        </label>
+        <button type="submit" class="primary-btn">Apply</button>
+        <a href="{% url 'joined_view_detail' saved_view.pk %}" class="ghost-btn">Clear</a>
+    </form>
+</section>
+
+<section class="panel">
+    {% if data_error %}
+        <div class="error-box">{{ data_error }}</div>
+    {% endif %}
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    {% for column in display_columns %}
+                        <th>{{ column.label }}</th>
+                    {% endfor %}
+                    {% if base_table.primary_key_columns %}
+                        <th>Actions</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                    <tr>
+                        {% for value in row.cells %}
+                            <td>{{ value|default:"-" }}</td>
+                        {% endfor %}
+                        {% if base_table.primary_key_columns %}
+                            <td>
+                                {% if row.detail_url %}
+                                    <a href="{{ row.detail_url }}" class="table-link">Inspect base row</a>
+                                {% endif %}
+                                {% if row.edit_url %}
+                                    <a href="{{ row.edit_url }}" class="table-link">Edit base row</a>
+                                {% endif %}
+                            </td>
+                        {% endif %}
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="{{ display_columns|length|add:action_column_count }}">No rows matched the current search.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if page_obj.paginator.num_pages > 1 %}
+        <div class="pager">
+            {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}{% if pagination_query %}&{{ pagination_query }}{% endif %}">Previous</a>
+            {% endif %}
+            <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% if pagination_query %}&{{ pagination_query }}{% endif %}">Next</a>
+            {% endif %}
+        </div>
+    {% endif %}
+</section>
+{% endblock %}
